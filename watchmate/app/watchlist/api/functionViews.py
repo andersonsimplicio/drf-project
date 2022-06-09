@@ -1,29 +1,30 @@
+
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from app.watchlist.models import Movie
 from app.watchlist.api.serializers.MovieSerializer import MovieSerializer
+from rest_framework.decorators import api_view
 
 
-
-class MovieListAV(APIView):
-    
-    def get(self, request):
+@api_view(['GET'])
+def movie_list(request):
+    if request.method == 'GET':
         movies = Movie.objects.all()
         serialize = MovieSerializer(movies,many=True)  
         return Response(serialize.data)
-
-    def post(self,request):
+    
+    if request.method=='POST':
         serialize = MovieSerializer(data=request.data)
         if serialize.is_valid():
             serialize.save()
             return Response(serialize.data)
         else:
-            return Response(serialize.errors,status=status.HTTP_400_BAD_REQUEST)
-
-class MovieDetailAV(APIView):
-    
-    def get(self,request,pk): 
+            return Response(serialize.erros,status=status.HTTP_400_BAD_REQUEST)
+        
+@api_view(['GET','PUT','DELETE'])
+def movie_detail(request,pk):
+    if request.method == 'GET':
         try:
             movies = Movie.objects.get(pk=pk)
         except Movie.DoesNotExist:
@@ -31,16 +32,17 @@ class MovieDetailAV(APIView):
         
         serialize = MovieSerializer(movies)
         return Response(serialize.data)
-    def put(self,request,pk):
-        movies = Movie.objects.get(pk=pk)
-        serialize = MovieSerializer(movies,data=request.data)
-        if serialize.is_valid():
-            serialize.save()
-            return Response(serialize.data)
-        else:
-            return Response(serialize.erros,status=status.HTTP_400_BAD_REQUEST)
         
-    def delete(self,request,pk):
+    if request.method == 'PUT':
+       movies = Movie.objects.get(pk=pk)
+       serialize = MovieSerializer(movies,data=request.data)
+       if serialize.is_valid():
+           serialize.save()
+           return Response(serialize.data)
+       else:
+           return Response(serialize.erros,status=status.HTTP_400_BAD_REQUEST)
+        
+    if request.method == 'DELETE':
         try:
             movies = Movie.objects.get(pk=pk)
             movies.delete()
@@ -48,8 +50,3 @@ class MovieDetailAV(APIView):
             return Response({'Erros':'Movies Não encontrado!'},status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_204_NO_CONTENT)
         
-        
-
-movie_list = MovieListAV.as_view()
-movie_detail = MovieDetailAV.as_view()
-
